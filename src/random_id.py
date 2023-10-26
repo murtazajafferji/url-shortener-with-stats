@@ -10,4 +10,4 @@ def generate_url_id() -> str:
     return generate_random_id(7)
 
 def generate_auth_token() -> str:
-    return generate_random_id(16)
+    return generate_random_id(16) # TODO: Pull from configuration

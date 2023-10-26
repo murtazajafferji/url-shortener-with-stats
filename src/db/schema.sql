@@ -21,6 +21,8 @@ BEGIN
   UPDATE urls SET expire_time = datetime('now', '+30 days') WHERE url_id = NEW.url_id; --TODO: Make expiration configurable
 END;
 
+DROP TABLE IF EXISTS stats;
+
 -- TODO: Store this in a NoSQL database
 CREATE TABLE stats (
     url_id TEXT,

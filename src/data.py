@@ -29,11 +29,19 @@ class DataStore(ABC):
 # TODO: Add Redis data store for caching
 
 class SqliteDataStore(DataStore):
+    __instance = None
+
     # TODO: Look up Flask way to handle test data stores
-    # TODO: Look up if I can 
     def __init__(self, testing: bool = False) -> None:
+        if self.__instance is not None:
+            raise RuntimeError("Already instantiated!")
+        SqliteDataStore.__instance = self
         self.url_table_name = f"{'test_' if testing else ''}urls"
         self.stats_table_name = f"{'test_' if testing else ''}stats"
+
+    @classmethod
+    def instance(cls):
+        return cls.__instance
 
     def create_url(self, url_id: str, redirect_url: str, auth_token: str) -> None:
         db = SqliteDB()

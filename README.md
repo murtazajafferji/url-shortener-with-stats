@@ -42,6 +42,8 @@ On Unix or MacOS, run:
 py.test -v
 ```
 
+![Test results](test_results.png)
+
 ## Requirements (completed)
 
  1. Expose an endpoint to create a new shortened URL.

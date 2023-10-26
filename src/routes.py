@@ -1,9 +1,5 @@
 import flask
-
-from flask import Blueprint
-from flask import current_app
-
-from flask import Flask, request, abort, redirect
+from flask import Flask, request, abort, redirect, current_app, Blueprint
 from werkzeug.exceptions import HTTPException
 from datetime import datetime, timezone
 
@@ -14,7 +10,6 @@ from src.validation import validate_request_body
 
 from src.data import SqliteDataStore
 
-data_store = SqliteDataStore()
 routes = Blueprint('routes', __name__, static_folder='static', template_folder='templates') # https://stackoverflow.com/questions/66415003/how-to-import-routes-from-other-file-using-flask
 
 @routes.route("/<urlId>", methods=["GET"])
@@ -32,8 +27,8 @@ def redirect(urlId: str):
     validate_url_id_exists(urlId)
     validate_url_id_not_expired(urlId)
 
-    redirect_url = data_store.get_direct_url(urlId)
-    data_store.visit_url_id(urlId, request.remote_addr)
+    redirect_url = get_data_store().get_direct_url(urlId)
+    get_data_store().visit_url_id(urlId, request.remote_addr)
     return flask.redirect(redirect_url, code=301)
 
 
@@ -55,7 +50,7 @@ def stats(urlId: str):
     validate_auth_token(urlId, auth_token)
     validate_url_id_not_expired(urlId)
 
-    return data_store.visits_per_ip(urlId)
+    return get_data_store().visits_per_ip(urlId)
 
 # TODO: Clarify requirement for whether the stats should be deleted for the url as well
 @routes.route("/<urlId>", methods=["DELETE"])
@@ -75,7 +70,7 @@ def delete(urlId: str):
     validate_auth_token(urlId, auth_token)
     validate_url_id_not_expired(urlId)
 
-    data_store.delete_url(urlId)
+    get_data_store().delete_url(urlId)
     return ('', 204)
 
 @routes.route("/create", methods=["POST"])
@@ -98,18 +93,18 @@ def create():
     if "id" in data:
         url_id = data["id"]
         if url_id_is_expired(url_id):
-            data_store.delete_url_id(url_id)
-        elif data_store.has_redirect(url_id):
+            get_data_store().delete_url_id(url_id)
+        elif get_data_store().has_redirect(url_id):
             abort(400, f"URL with id {url_id} already exists")
     else:
         url_id = None
-        while url_id is None or data_store.has_redirect(url_id):
+        while url_id is None or get_data_store().has_redirect(url_id):
             url_id = generate_url_id()
 
     url = data["url"]
     auth_token = generate_auth_token()
 
-    data_store.create_url(url_id, url, auth_token)
+    get_data_store().create_url(url_id, url, auth_token)
     short_url = {}
     return {
         "shortUrl": f"{get_server_url()}/{url_id}",
@@ -120,11 +115,11 @@ def create():
 # TODO: Perform one query to DB for row data per request rather than multiple lookups
 # TODO: Look up documentation for making this a decorator/filter
 def validate_auth_token(url_id, auth_token):
-    if not data_store.has_valid_auth_token(url_id, auth_token):
+    if not get_data_store().has_valid_auth_token(url_id, auth_token):
         abort(403, f"Auth token is not valid")
 
 def validate_url_id_exists(url_id):
-    if not data_store.has_redirect(url_id):
+    if not get_data_store().has_redirect(url_id):
         abort(404, f"URL with id {url_id} does not exist")
 
 def validate_url_id_not_expired(url_id):
@@ -132,7 +127,7 @@ def validate_url_id_not_expired(url_id):
         abort(410, f"URL with id {url_id} is expired. You may now reuse this url id.")
 
 def url_id_is_expired(url_id):
-    expire_time = data_store.get_expiration(url_id)
+    expire_time = get_data_store().get_expiration(url_id)
     if expire_time is None:
         return False
 
@@ -145,3 +140,9 @@ def get_server_url():
     server_port = request.environ.get('SERVER_PORT', 'default_server_port')
     url = f"http://{server_name}:{server_port}"
     return url
+
+# TODO: Find a better approach for creating a singleton
+def get_data_store():
+    if (SqliteDataStore.instance() is None):
+        SqliteDataStore(testing=current_app.config['TESTING'])
+    return SqliteDataStore.instance()

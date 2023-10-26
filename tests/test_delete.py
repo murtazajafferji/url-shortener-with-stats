@@ -14,15 +14,15 @@ def test_delete_url_does_not_exist(client, delete_path, create_url):
 
 def test_delete_invalid_auth_token(client, delete_path, create_url):
     url_id, auth_token = create_url
-    invalid_auth_token = 'invalid_auth_token'
+    invalid_auth_token = 'vOgp8IeXQOWOy5NS'
     response = client.delete(delete_path.format(url_id), url_id, headers={'Authorization': invalid_auth_token})
     assert response.status_code == 403
-
 
 def test_delete_no_auth_token(client, delete_path, create_url):
     url_id, auth_token = create_url
     response = client.delete(delete_path.format(url_id), url_id)
     assert response.status_code == 403
+
 
 def test_delete_url_id_expired(client, delete_path, create_url, data_store):
     url_id, auth_token = create_url

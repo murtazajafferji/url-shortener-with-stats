@@ -28,14 +28,15 @@ def test_create_no_json_body(client, create_path):
     {"url": "https://example"},
     {"url": "https://example.c"},
     {"id": '-', "url": "https://example.com"},
-    {"id": '', "url": "https://example.com"}
+    {"id": '', "url": "https://example.com"},
+    {"id": '123456789012345678901', "url": "https://example.com"}
 ])
 def test_create_invalid(client, create_path, invalid_inputs):
     response = client.post(create_path, json=invalid_inputs)
     assert response.status_code == 400, str(invalid_inputs)
 
 
-def test_create_with_url_id(data_store, client, create_path, create_via_post):
+def test_create_with_url_id(client, create_path, create_via_post):
     url_id, auth_token, redirect_url, response = create_via_post
 
     assert response.status_code == 200

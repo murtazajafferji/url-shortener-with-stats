@@ -10,8 +10,7 @@ def validate_request_body(data) -> Tuple[bool, Optional[str]]:
 
     fields = [
         ("url", str, validate_url, True),
-        ("id", str, validate_url_id, False),
-        ("authToken", str, validate_auth_token, False),
+        ("id", str, validate_url_id, False)
     ]
 
     for field_name, field_type, field_validate, required in fields:
@@ -32,21 +31,14 @@ def validate_request_body(data) -> Tuple[bool, Optional[str]]:
 
 # TODO: Get requirements for url id validation. Examples had all lowercase, but this is not currently enforeced.
 def validate_url_id(url_id: str) -> Tuple[bool, Optional[str]]:
-    pattern = r"^[A-Za-z0-9]+$" # validates that IDs are non-empty and only contain alphanumeric characters
+    pattern = r"^[A-Za-z0-9]{1,20}$" # validates that IDs are non-empty and only contain alphanumeric characters and less than 20 characters. TODO: Pull length from configuration
     if not re.match(pattern, url_id):
-        return False, "urlId must consist of letters and digits"
+        return False, "urlId must consist of letters and digits between 1-20 characters"
 
     return True, None
 
 
 def validate_url(url: str) -> Tuple[bool, Optional[str]]:
-    if not validators.url(url):
-        return False, "The URL is not valid"
-
-    return True, None
-
-
-def validate_auth_token(url: str) -> Tuple[bool, Optional[str]]:
     if not validators.url(url):
         return False, "The URL is not valid"
 
